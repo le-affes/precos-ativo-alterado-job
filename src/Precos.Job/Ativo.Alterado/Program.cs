@@ -8,7 +8,7 @@ public class Program
 
         var app = builder.Build();
 
-        app.MapGet("/hello", () => "API .NET funcionando");
+        app.MapGet("/hello", () => "API .NET funcionando em v2");
 
         app.MapGet("/health", () => Results.Ok(new
         {
