@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "qBueNWNXP/o=",
+  "dgSpecHash": "GRUXUt2reEQ=",
   "success": true,
   "projectFilePath": "C:\\Users\\leand\\Documents\\GitHub\\precos-ativo-alterado-job\\src\\Precos.Job\\Ativo.Alterado\\Ativo.Alterado.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\leand\\.nuget\\packages\\awssdk.core\\4.0.9.7\\awssdk.core.4.0.9.7.nupkg.sha512",
+    "C:\\Users\\leand\\.nuget\\packages\\awssdk.sqs\\4.0.3.8\\awssdk.sqs.4.0.3.8.nupkg.sha512"
+  ],
   "logs": []
 }

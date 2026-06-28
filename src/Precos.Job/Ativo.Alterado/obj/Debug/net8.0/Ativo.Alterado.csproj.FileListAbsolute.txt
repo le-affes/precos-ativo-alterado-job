@@ -14,9 +14,13 @@ C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.A
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Alterado.dll
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\refint\Ativo.Alterado.dll
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Alterado.pdb
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Alterado.genruntimeconfig.cache
 C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\ref\Ativo.Alterado.dll
+C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\bin\Debug\net8.0\AWSSDK.Core.dll
+C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\bin\Debug\net8.0\AWSSDK.SQS.dll
+C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Alterado.csproj.AssemblyReference.cache
+C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Alterado.sourcelink.json
+C:\Users\leand\Documents\GitHub\precos-ativo-alterado-job\src\Precos.Job\Ativo.Alterado\obj\Debug\net8.0\Ativo.Al.23CECCBA.Up2Date
