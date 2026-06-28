@@ -1,0 +1,269 @@
+name: Deploy API
+
+run-name: Deploy API ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy. Example: 0.1.10"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show deploy version
+        run: |
+          echo "====================================="
+          echo "INICIANDO DEPLOY"
+          echo "Repositório: ${{ github.event.repository.name }}"
+          echo "Versão selecionada: ${{ inputs.version }}"
+          echo "Imagem Docker: ${{ github.event.repository.name }}:${{ inputs.version }}"
+          echo "====================================="
+
+      - name: Validate GitHub variables
+        run: |
+          echo "====================================="
+          echo "VALIDANDO VARIÁVEIS DO GITHUB"
+          echo "====================================="
+
+          if [ -z "${{ vars.DOTNET_VERSION }}" ]; then
+            echo "Variável DOTNET_VERSION não configurada no GitHub"
+            exit 1
+          fi
+
+          if [ -z "${{ vars.DOTNET_PROJECT_PATH }}" ]; then
+            echo "Variável DOTNET_PROJECT_PATH não configurada no GitHub"
+            exit 1
+          fi
+
+          echo "DOTNET_VERSION=${{ vars.DOTNET_VERSION }}"
+          echo "DOTNET_PROJECT_PATH=${{ vars.DOTNET_PROJECT_PATH }}"
+          echo "DOTNET_APP_DLL=$(basename '${{ vars.DOTNET_PROJECT_PATH }}' .csproj).dll"
+          echo "====================================="
+
+      - name: Checkout selected version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Show Git reference
+        run: |
+          echo "====================================="
+          echo "CÓDIGO BAIXADO"
+          echo "Git ref: ${{ inputs.version }}"
+          echo "Commit:"
+          git log -1 --oneline
+          echo "====================================="
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ vars.DOTNET_VERSION }}
+
+      - name: Restore .NET dependencies
+        run: |
+          PROJECT_PATH="${{ vars.DOTNET_PROJECT_PATH }}"
+          APP_DLL="$(basename "$PROJECT_PATH" .csproj).dll"
+
+          echo "====================================="
+          echo "RESTORE .NET"
+          echo "Projeto: $PROJECT_PATH"
+          echo "DLL esperado: $APP_DLL"
+          echo "Versão: ${{ inputs.version }}"
+          echo "====================================="
+
+          dotnet restore "$PROJECT_PATH"
+
+      - name: Publish .NET application
+        run: |
+          PROJECT_PATH="${{ vars.DOTNET_PROJECT_PATH }}"
+          APP_DLL="$(basename "$PROJECT_PATH" .csproj).dll"
+
+          echo "====================================="
+          echo "PUBLISH .NET"
+          echo "Projeto: $PROJECT_PATH"
+          echo "DLL esperado: $APP_DLL"
+          echo "Versão: ${{ inputs.version }}"
+          echo "====================================="
+
+          dotnet publish "$PROJECT_PATH" -c Release -o publish --no-restore
+
+          echo ""
+          echo "Arquivos publicados:"
+          ls -lh publish
+
+          echo ""
+          echo "Validando DLL publicado"
+          if [ ! -f "publish/$APP_DLL" ]; then
+            echo "DLL não encontrado: publish/$APP_DLL"
+            exit 1
+          fi
+
+      - name: Build Docker image
+        run: |
+          APP_NAME="${{ github.event.repository.name }}"
+          APP_VERSION="${{ inputs.version }}"
+          PROJECT_PATH="${{ vars.DOTNET_PROJECT_PATH }}"
+          APP_DLL="$(basename "$PROJECT_PATH" .csproj).dll"
+
+          echo "====================================="
+          echo "BUILD DOCKER IMAGE"
+          echo "Aplicação: $APP_NAME"
+          echo "DLL: $APP_DLL"
+          echo "Imagem: $APP_NAME:$APP_VERSION"
+          echo "====================================="
+
+          docker build \
+            -t "$APP_NAME:$APP_VERSION" \
+            .
+
+          echo ""
+          echo "Imagem criada:"
+          docker images | grep "$APP_NAME" || true
+
+      - name: Save image as tar
+        run: |
+          APP_NAME="${{ github.event.repository.name }}"
+          APP_VERSION="${{ inputs.version }}"
+
+          echo "====================================="
+          echo "EXPORTANDO IMAGEM"
+          echo "Imagem: $APP_NAME:$APP_VERSION"
+          echo "Arquivo: image.tar"
+          echo "====================================="
+
+          docker save \
+            "$APP_NAME:$APP_VERSION" \
+            -o image.tar
+
+          ls -lh image.tar
+
+      - name: Fix permissions
+        run: chmod 644 image.tar
+
+      - name: Create app directory on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_NAME="${{ github.event.repository.name }}"
+            APP_DIR="/home/ubuntu/apps/$APP_NAME"
+
+            mkdir -p "$APP_DIR"
+
+            echo "Diretório garantido:"
+            echo "$APP_DIR"
+
+      - name: Copy to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "image.tar,docker-compose.yml"
+          target: "/home/ubuntu/apps/${{ github.event.repository.name }}"
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_NAME="${{ github.event.repository.name }}"
+            APP_VERSION="${{ inputs.version }}"
+            APP_PORT="8080"
+            DOTNET_PROJECT_PATH="${{ vars.DOTNET_PROJECT_PATH }}"
+            APP_DLL="$(basename "$DOTNET_PROJECT_PATH" .csproj).dll"
+            APP_DIR="/home/ubuntu/apps/$APP_NAME"
+
+            echo "====================================="
+            echo "DEPLOY NA EC2"
+            echo "Aplicação: $APP_NAME"
+            echo "Versão: $APP_VERSION"
+            echo "DLL: $APP_DLL"
+            echo "Imagem esperada: $APP_NAME:$APP_VERSION"
+            echo "Diretório: $APP_DIR"
+            echo "====================================="
+
+            echo ""
+            echo "[1] Garantindo rede Docker compartilhada"
+            docker network inspect app-network >/dev/null 2>&1 || docker network create app-network
+
+            echo ""
+            echo "[2] Entrando no diretório da API"
+            cd "$APP_DIR"
+            echo "Diretório atual: $(pwd)"
+
+            echo ""
+            echo "[3] Arquivos recebidos"
+            ls -lh
+
+            echo ""
+            echo "[4] Carregando imagem Docker"
+            docker load -i image.tar
+
+            echo ""
+            echo "[5] Imagens disponíveis"
+            docker images | grep "$APP_NAME" || true
+
+            echo ""
+            echo "[6] Criando arquivo .env"
+            cat > .env << EOF_ENV
+            APP_NAME=$APP_NAME
+            APP_VERSION=$APP_VERSION
+            APP_PORT=$APP_PORT
+            APP_DLL=$APP_DLL
+            ASPNETCORE_URLS=http://+:8080
+            ASPNETCORE_ENVIRONMENT=Production
+            EOF_ENV
+
+            echo ""
+            echo "[7] Versão configurada"
+            grep APP_VERSION .env
+
+            echo ""
+            echo "[8] DLL configurado"
+            grep APP_DLL .env
+
+            echo ""
+            echo "[9] Recriando somente o serviço app do projeto $APP_NAME"
+            docker compose -p "$APP_NAME" up -d --force-recreate --no-deps app
+
+            echo ""
+            echo "[10] Removendo container legado desta API, se existir"
+            docker rm -f "app-$APP_NAME-1" 2>/dev/null || true
+
+            echo ""
+            echo "[11] Reiniciando Nginx para atualizar resolução interna"
+            docker restart nginx
+
+            echo ""
+            echo "[12] Containers em execução"
+            docker ps
+
+            echo ""
+            echo "[13] Status do serviço da API"
+            docker compose -p "$APP_NAME" ps
+
+            echo ""
+            echo "====================================="
+            echo "DEPLOY FINALIZADO"
+            echo "Aplicação publicada: $APP_NAME"
+            echo "Versão publicada: $APP_VERSION"
+            echo "DLL publicado: $APP_DLL"
+            echo "Imagem publicada: $APP_NAME:$APP_VERSION"
+            echo "====================================="

@@ -1,0 +1,15 @@
+services:
+  app:
+    image: ${APP_NAME}:${APP_VERSION}
+    container_name: ${APP_NAME}
+    expose:
+      - "${APP_PORT}"
+    env_file:
+      - .env
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    external: true

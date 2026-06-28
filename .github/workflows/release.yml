@@ -1,0 +1,109 @@
+name: Create Release
+
+run-name: Create Release from main
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate release version
+        id: version
+        run: |
+          echo "====================================="
+          echo "GERANDO VERSÃO DA RELEASE"
+          echo "Formato: 0.<release>.<commit>"
+          echo "====================================="
+
+          git fetch --tags
+
+          echo ""
+          echo "[1] Buscando última release existente"
+
+          LAST_RELEASE_NUMBER=$(git tag -l "0.*.*" \
+            | awk -F. '{print $2}' \
+            | sort -n \
+            | tail -1)
+
+          if [ -z "$LAST_RELEASE_NUMBER" ]; then
+            NEXT_RELEASE_NUMBER=1
+          else
+            NEXT_RELEASE_NUMBER=$((LAST_RELEASE_NUMBER + 1))
+          fi
+
+          echo "Última release encontrada: ${LAST_RELEASE_NUMBER:-nenhuma}"
+          echo "Próxima release: $NEXT_RELEASE_NUMBER"
+
+          echo ""
+          echo "[2] Calculando quantidade total de commits"
+
+          COMMIT_NUMBER=$(git rev-list --count HEAD)
+
+          echo "Quantidade total de commits: $COMMIT_NUMBER"
+
+          VERSION="0.${NEXT_RELEASE_NUMBER}.${COMMIT_NUMBER}"
+
+          echo ""
+          echo "[3] Versão gerada"
+          echo "VERSION=$VERSION"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "====================================="
+          echo "VALIDANDO TAG"
+          echo "Tag: $VERSION"
+          echo "====================================="
+
+          if git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "Tag $VERSION already exists"
+            exit 1
+          fi
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "====================================="
+          echo "CRIANDO TAG"
+          echo "Tag: $VERSION"
+          echo "Commit:"
+          git log -1 --oneline
+          echo "====================================="
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          target_commitish: main
+          generate_release_notes: true
+
+      - name: Show created release
+        run: |
+          echo "====================================="
+          echo "RELEASE CRIADA"
+          echo "Versão: ${{ steps.version.outputs.version }}"
+          echo "Tag: ${{ steps.version.outputs.version }}"
+          echo "====================================="
