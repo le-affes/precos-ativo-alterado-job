@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Ativo.Alterado")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fd3d9cd82c2a08e063ba433d7bc8a90e4adf009b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f82e144a73d187ed6e127faea49f55b56feb504b")]
 [assembly: System.Reflection.AssemblyProductAttribute("Ativo.Alterado")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Ativo.Alterado")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

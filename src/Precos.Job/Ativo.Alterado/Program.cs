@@ -1,46 +1,19 @@
-﻿using Amazon;
-using Amazon.SQS;
-using Ativo.Alterado.Services;
-
-namespace Ativo.Alterado;
-
+﻿using Ativo.Alterado.Service;
+using Microsoft.Extensions.DependencyInjection;
+using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.BuildHostApplicationBuilder;
 public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = GetBuilder(args);
 
-        var awsRegion = Environment.GetEnvironmentVariable("AWS_REGION")
-                        ?? throw new InvalidOperationException("Variável de ambiente AWS_REGION não configurada.");
+        using var host = builder.Build();
 
-        builder.Services.AddSingleton<IAmazonSQS>(_ =>
-        {
-            return new AmazonSQSClient(RegionEndpoint.GetBySystemName(awsRegion));
-        });
+        using var scope = host.Services.CreateScope();
 
-        builder.Services.AddScoped<SqsPublisherService>();
+        var sqsService = scope.ServiceProvider.GetRequiredService<SqsService>();
 
-        var app = builder.Build();
-
-        app.MapGet("/hello", () => "API .NET funcionando em v2");
-
-        app.MapGet("/health", () => Results.Ok(new
-        {
-            status = "UP"
-        }));
-
-        app.MapGet("/sqs/teste-publicacao", async (SqsPublisherService sqsPublisherService) =>
-        {
-            var messageId = await sqsPublisherService.EnviarMensagemTesteAsync();
-
-            return Results.Ok(new
-            {
-                sucesso = true,
-                fila = "operacao-registrada.fifo",
-                messageId
-            });
-        });
-
-        app.Run();
+        // chama seu método aqui
+        // sqsService.Processar();
     }
 }
