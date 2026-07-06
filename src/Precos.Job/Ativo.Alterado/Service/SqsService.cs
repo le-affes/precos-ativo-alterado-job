@@ -1,7 +1,5 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Amazon.SQS;
+﻿using Amazon.SQS;
 using Amazon.SQS.Model;
-using Ativo.Alterado.Domain;
 using Ativo.Alterado.Service.DTOs;
 using System.Text.Json;
 
@@ -12,13 +10,14 @@ public class SqsService : ISqsService
 {
     private readonly IAmazonSQS _sqsClient;
     private readonly string _operacaoRegistradaQueueUrl;
-
-    public SqsService(IAmazonSQS sqsClient)
+    private readonly ILogger<SqsService> _logger;
+    public SqsService(IAmazonSQS sqsClient, ILogger<SqsService> logger)
     {
         _sqsClient = sqsClient;
 
         _operacaoRegistradaQueueUrl = Environment.GetEnvironmentVariable("SQS_ATIVO_ALTERADO_URL")
             ?? throw new InvalidOperationException("Variável de ambiente SQS_OPERACAO_REGISTRADA_URL não configurada.");
+        _logger = logger;
     }
 
     public async Task<string> SendMessageAsync()
@@ -48,6 +47,7 @@ public class SqsService : ISqsService
     {
         try
         {
+            _logger.LogInformation("Iniciando poll de mensagens.");
             var request = new ReceiveMessageRequest
             {
                 QueueUrl = _operacaoRegistradaQueueUrl,
@@ -58,13 +58,15 @@ public class SqsService : ISqsService
 
             if (response.Messages == null)
             {
+                _logger.LogInformation("Nenhuma mensagem encontrada.");
                 return null;
             }
             var mensagem = response.Messages[0];
 
             var desserialized = JsonSerializer.Deserialize<MessageSqsDTO>(mensagem.Body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            desserialized!.SetMessageHandle(mensagem.ReceiptHandle);
+            desserialized!.SetId(mensagem.MessageId, mensagem.ReceiptHandle);
 
+            _logger.LogInformation("Recebida mensagem {MessageId}.", mensagem.MessageId);
             return desserialized;
         }
         catch (Exception ex)

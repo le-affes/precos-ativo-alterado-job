@@ -4,17 +4,16 @@ namespace Ativo.Alterado.Service.DTOs;
 
 public record MessageSqsDTO
 {
+    public string? MessageId { get; private set; }
     public string? ReceiptHandle { get; private set; }
     public required string Codigo { get; set; }
     public required string Nome { get; set; }
     public required decimal Valor_Base { get; set; }
     public required bool Apta_Negociacao { get; set; }
 
-    public void SetMessageHandle(string messageHandle)
+    public void SetId(string messageId, string messageHandle)
     {
-        if (string.IsNullOrEmpty(messageHandle)) 
-            throw new ArgumentNullException(nameof(messageHandle));
-
+        MessageId = messageId;
         ReceiptHandle = messageHandle;
     }
 

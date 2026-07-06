@@ -1,5 +1,4 @@
 using Ativo.Alterado.Infrastrucuture;
-using Ativo.Alterado.Service.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,14 +35,12 @@ public class Worker : BackgroundService
                     continue;
                 }
 
-                _logger.LogInformation("Mensagem recebida: {@Mensagem}", mensagem);
-
                 await _precoRepository.InsertPrecoAsync(mensagem.MapToDomain());
 
                 await _sqsService.CommitMessageAsync(mensagem);
 
-                _logger.LogInformation("Mensagem processada com sucesso: {@Mensagem}", mensagem.ReceiptHandle);
-                            }
+                _logger.LogInformation("Mensagem processada com sucesso: {@Mensagem}", mensagem.MessageId);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao consumir mensagem da fila SQS.");

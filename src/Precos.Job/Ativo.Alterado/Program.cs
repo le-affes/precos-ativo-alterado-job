@@ -1,4 +1,6 @@
-﻿using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.BuildHost;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.BuildHost;
 public class Program
 {
     public static void Main(string[] args)
