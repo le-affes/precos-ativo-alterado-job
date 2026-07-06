@@ -1,6 +1,6 @@
 ﻿using Ativo.Alterado.Service;
 using Microsoft.Extensions.DependencyInjection;
-using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.BuildHostApplicationBuilder;
+using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.BuildHost;
 public class Program
 {
     public static void Main(string[] args)

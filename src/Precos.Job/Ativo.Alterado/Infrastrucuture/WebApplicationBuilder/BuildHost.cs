@@ -9,7 +9,7 @@ using static Ativo.Alterado.Infrastrucuture.WebApplicationBuilder.ConnectionStri
 
 namespace Ativo.Alterado.Infrastrucuture.WebApplicationBuilder;
 
-public static class BuildHostApplicationBuilder
+public static class BuildHost
 {
     public static HostApplicationBuilder GetBuilder(string[] args)
     {
