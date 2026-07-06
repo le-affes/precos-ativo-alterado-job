@@ -229,6 +229,12 @@ jobs:
             APP_DLL=$APP_DLL
             ASPNETCORE_URLS=http://+:8080
             ASPNETCORE_ENVIRONMENT=Production
+            DB_URL=${{ secrets.DB_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            SQS_ATIVO_ALTERADO_URL=${{ secrets.SQS_ATIVO_ALTERADO_URL }}
+            SQS_OPERACAO_REGISTRADA_URL=${{ secrets.SQS_OPERACAO_REGISTRADA_URL }}
             EOF_ENV
 
             echo ""
