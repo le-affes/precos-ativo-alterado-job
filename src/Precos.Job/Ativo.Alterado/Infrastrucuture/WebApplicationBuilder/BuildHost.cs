@@ -14,6 +14,7 @@ public static class BuildHost
     public static HostApplicationBuilder GetBuilder(string[] args)
     {
         var builder = Host.CreateApplicationBuilder(args);
+        builder.Services.AddHostedService<Worker>();
 
         var awsRegion = Environment.GetEnvironmentVariable("AWS_REGION")
             ?? throw new InvalidOperationException(
@@ -50,6 +51,7 @@ public static class BuildHost
         });
 
         builder.Services.AddScoped<IPrecoRepository, PrecoRepository>();
+        builder.Services.AddScoped<ISqsService, SqsService>();
 
         return builder;
     }

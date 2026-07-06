@@ -12,7 +12,7 @@ public class PrecoRepository : IPrecoRepository
         _connection = connection;
     }
 
-    public async Task InserirPrecificacaoAsync(RegistroPrecificacao registro)
+    public async Task InsertPrecoAsync(RegistroPrecificacao registro)
     {
         const string sql = @"
             INSERT INTO precos.precificacao
@@ -21,13 +21,19 @@ public class PrecoRepository : IPrecoRepository
                 (@Codigo, @ValorBase, @DataHoraAtualizacao, @Atualizado);
         ";
 
-        await _connection.ExecuteAsync(sql, new
+        var execution = await _connection.ExecuteAsync(sql, new
         {
             registro.Codigo,
             registro.ValorBase,
             DataHoraAtualizacao = ObterDataHoraSaoPaulo(),
             Atualizado = registro.AptaNegociacao
         });
+
+        if(execution != 1)
+        {
+            throw new Exception($"Erro ao inserir registro de precificação para o ativo {registro.Codigo}. Linhas afetadas: {execution}");
+        }
+
     }
 
     private static DateTime ObterDataHoraSaoPaulo()

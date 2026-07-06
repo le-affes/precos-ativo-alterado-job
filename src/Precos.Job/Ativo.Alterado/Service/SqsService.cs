@@ -1,5 +1,7 @@
-﻿using Amazon.SQS;
+﻿using Amazon.Runtime.Internal.Util;
+using Amazon.SQS;
 using Amazon.SQS.Model;
+using Ativo.Alterado.Domain;
 using Ativo.Alterado.Service.DTOs;
 using System.Text.Json;
 
@@ -44,22 +46,35 @@ public class SqsService : ISqsService
 
     public async Task<MessageSqsDTO?> ReceiveMessageAsync()
     {
-        var request = new ReceiveMessageRequest
+        try
         {
-            QueueUrl = _operacaoRegistradaQueueUrl,
-            MaxNumberOfMessages = 1,
-            WaitTimeSeconds = 10
-        };
-        var response = await _sqsClient.ReceiveMessageAsync(request);
-        if (response.Messages.Count == 0)
-        {
-            return null;
+            var request = new ReceiveMessageRequest
+            {
+                QueueUrl = _operacaoRegistradaQueueUrl,
+                MaxNumberOfMessages = 1,
+                WaitTimeSeconds = 10
+            };
+            var response = await _sqsClient.ReceiveMessageAsync(request);
+
+            if (response.Messages == null)
+            {
+                return null;
+            }
+            var mensagem = response.Messages[0];
+
+            var desserialized = JsonSerializer.Deserialize<MessageSqsDTO>(mensagem.Body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            desserialized!.SetMessageHandle(mensagem.ReceiptHandle);
+
+            return desserialized;
         }
-        var mensagem = response.Messages[0];
+        catch (Exception ex)
+        {
+            throw new Exception("Erro ao receber mensagem da fila SQS.", ex);
+        }
+    }
 
+    public async Task CommitMessageAsync(MessageSqsDTO mensagem)
+    {
         await _sqsClient.DeleteMessageAsync(_operacaoRegistradaQueueUrl, mensagem.ReceiptHandle);
-        var desserialized = JsonSerializer.Deserialize<MessageSqsDTO>(mensagem.Body);
-
-        return desserialized;
     }
 }
