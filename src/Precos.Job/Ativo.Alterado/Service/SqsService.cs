@@ -1,6 +1,7 @@
 ﻿using Amazon.SQS;
 using Amazon.SQS.Model;
 using Ativo.Alterado.Service.DTOs;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Ativo.Alterado.Service;
@@ -15,7 +16,7 @@ public class SqsService : ISqsService
     {
         _sqsClient = sqsClient;
 
-        _operacaoRegistradaQueueUrl = Environment.GetEnvironmentVariable("SQS_ATIVO_ALTERADO_URL")
+        _operacaoRegistradaQueueUrl = Environment.GetEnvironmentVariable("SQS_OPERACAO_REGISTRADA_URL")
             ?? throw new InvalidOperationException("Variável de ambiente SQS_OPERACAO_REGISTRADA_URL não configurada.");
         _logger = logger;
     }
