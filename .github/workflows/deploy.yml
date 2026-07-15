@@ -254,22 +254,42 @@ jobs:
             docker rm -f "app-$APP_NAME-1" 2>/dev/null || true
 
             echo ""
-            echo "[11] Reiniciando Nginx para atualizar resolução interna"
-            docker restart nginx
-
-            echo ""
-            echo "[12] Containers em execução"
+            echo "[11] Containers em execução"
             docker ps
 
             echo ""
-            echo "[13] Status do serviço da API"
+            echo "[12] Status do serviço da API"
             docker compose -p "$APP_NAME" ps
+
+            echo ""
+            echo "[13] Validando se o container da aplicação está em execução"
+            if ! docker ps --format '{{.Names}}' | grep -Fxq "$APP_NAME"; then
+              echo "ERRO: o container $APP_NAME não está em execução."
+              docker compose -p "$APP_NAME" logs --tail 200 app || true
+              exit 1
+            fi
+
+            echo ""
+            echo "[14] Removendo arquivo temporário da imagem"
+            rm -f "$APP_DIR/image.tar"
+
+            echo ""
+            echo "[15] Removendo containers parados"
+            docker container prune -f
+
+            echo ""
+            echo "[16] Removendo todas as imagens Docker não utilizadas"
+            docker image prune -a -f
+
+            echo ""
+            echo "[17] Uso do disco após a limpeza"
+            docker system df
+            df -h /
 
             echo ""
             echo "====================================="
             echo "DEPLOY FINALIZADO"
             echo "Aplicação publicada: $APP_NAME"
             echo "Versão publicada: $APP_VERSION"
-            echo "DLL publicado: $APP_DLL"
             echo "Imagem publicada: $APP_NAME:$APP_VERSION"
             echo "====================================="
