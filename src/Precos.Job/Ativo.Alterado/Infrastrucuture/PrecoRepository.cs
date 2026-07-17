@@ -1,5 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Ativo.Alterado.Domain;
+﻿using Ativo.Alterado.Domain;
 using Ativo.Alterado.Infrastrucuture;
 using Dapper;
 using Microsoft.Extensions.Logging;
@@ -15,31 +14,77 @@ public class PrecoRepository : IPrecoRepository
         _logger = logger;
     }
 
+    private sealed class ResultadoPrecificacao
+    {
+        public int Desativadas { get; init; }
+        public int Inseridas { get; init; }
+    }
+
     public async Task InsertPrecoAsync(RegistroPrecificacao registro)
     {
-        _logger.LogInformation("Inserindo registro de precificação para o ativo {Codigo} com valor base {ValorBase}.", registro.Codigo, registro.ValorBase);
-        
-        const string sql = @"
-            INSERT INTO precos.precificacao
-                (codigo_ativo, preco, data_hora_atualizacao, atualizado)
-            VALUES
-                (@Codigo, @ValorBase, @DataHoraAtualizacao, @Atualizado);
-        ";
-
-        var execution = await _connection.ExecuteAsync(sql, new
-        {
+        _logger.LogInformation(
+            "Processando precificação para o ativo {Codigo}. Valor base: {ValorBase}, Apta para negociação: {AptaNegociacao}.",
             registro.Codigo,
             registro.ValorBase,
-            DataHoraAtualizacao = ObterDataHoraSaoPaulo(),
-            Atualizado = registro.AptaNegociacao
-        });
+            registro.AptaNegociacao);
 
-        if(execution != 1)
+        const string sql = """
+                        WITH precificacoes_desativadas AS
+                        (
+                            UPDATE precos.precificacao
+                            SET atualizado = FALSE
+                            WHERE codigo_ativo = @Codigo
+                              AND atualizado = TRUE
+                            RETURNING 1
+                        ),
+                        precificacao_inserida AS
+                        (
+                            INSERT INTO precos.precificacao
+                            (
+                                codigo_ativo,
+                                preco,
+                                data_hora_atualizacao,
+                                atualizado
+                            )
+                            SELECT
+                                @Codigo,
+                                @ValorBase,
+                                @DataHoraAtualizacao,
+                                TRUE
+                            WHERE @AptaNegociacao = TRUE
+                            RETURNING 1
+                        )
+                        SELECT
+                            (SELECT COUNT(*) FROM precificacoes_desativadas) AS Desativadas,
+                            (SELECT COUNT(*) FROM precificacao_inserida) AS Inseridas;
+                        """;
+
+        var resultado = await _connection.QuerySingleAsync<ResultadoPrecificacao>(
+            sql,
+            new
+            {
+                registro.Codigo,
+                registro.ValorBase,
+                registro.AptaNegociacao,
+                DataHoraAtualizacao = ObterDataHoraSaoPaulo()
+            });
+
+        if (registro.AptaNegociacao && resultado.Inseridas != 1)
         {
-            _logger.LogError("Erro ao inserir registro de precificação para o ativo {Codigo}. Linhas afetadas: {LinhasAfetadas}", registro.Codigo, execution);
-            throw new Exception($"Erro ao inserir registro de precificação para o ativo {registro.Codigo}. Linhas afetadas: {execution}");
+            _logger.LogError(
+                "Erro ao inserir a nova precificação do ativo {Codigo}. Linhas inseridas: {Inseridas}.",
+                registro.Codigo,
+                resultado.Inseridas);
+
+            throw new InvalidOperationException(
+                $"Não foi possível inserir a precificação do ativo {registro.Codigo}.");
         }
 
+        _logger.LogInformation(
+            "Precificação processada para o ativo {Codigo}. Desativadas: {Desativadas}; inseridas: {Inseridas}.",
+            registro.Codigo,
+            resultado.Desativadas,
+            resultado.Inseridas);
     }
 
     private static DateTime ObterDataHoraSaoPaulo()
