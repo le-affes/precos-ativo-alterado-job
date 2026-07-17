@@ -53,7 +53,7 @@ public class SqsService : ISqsService
             {
                 QueueUrl = _operacaoRegistradaQueueUrl,
                 MaxNumberOfMessages = 1,
-                WaitTimeSeconds = 10
+                WaitTimeSeconds = 20
             };
             var response = await _sqsClient.ReceiveMessageAsync(request);
 
